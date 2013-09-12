@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang='en-GB'>
+<head>
+	<meta charset='utf-8'>
+	<title>image opacity example</title>
+</head>
+
+<body>
+
+	<p>This is some text before the slider</p>
+
+		<script type="text/javascript" src='../js/imageOpacitySliderMin.js'></script>
+	<script id='imageOpacitySlider' type="text/javascript">
+		var imageSlider = new gui.ImageOpacitySlider();
+		//the third argument is an optional fixed width in pixels for the images!
+		imageSlider.init("images/firstImage.jpg", "images/secondImage.jpg", 500);
+	</script>
+
+	<p>This is some text after the slider</p>
+
+</body>
+</html>
