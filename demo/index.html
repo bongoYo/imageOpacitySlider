@@ -9,12 +9,15 @@
 
 	<p>This is some text before the slider</p>
 
-	<script type="text/javascript" src='../js/imageOpacitySliderMin.js'></script>
+	<script type="text/javascript" src='..//js/imageOpacitySlider.js'></script>
+	<!--<script type="text/javascript" src='http://interactive.guim.co.uk/2013/sep/imageOpacitySlider/js/imageOpacitySliderMin.js'></script>-->
+	<div style="margin-left:60px">
 	<script id='imageOpacitySlider' type="text/javascript">
 		var imageSlider = new gui.ImageOpacitySlider();
 		//the third argument is an optional fixed width in pixels for the images, if no argument id parsed then the images will use as much space as they can up to a maximum of the width of its parent container.
-		imageSlider.init("images/firstImage.jpg", "images/secondImage.jpg", 500);
+		imageSlider.init("images/firstImage.jpg", "images/secondImage.jpg", 300);
 	</script>
+	</div>
 
 	<p>This is some text after the slider</p>
 	<p>View the source to see how to use the slider</p>

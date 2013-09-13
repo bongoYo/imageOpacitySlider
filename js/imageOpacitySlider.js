@@ -16,6 +16,10 @@ var gui = gui || {};
    		dragPrevX:null,
    		changeOpacityStep:false,
    		holderWidth:null,
+   		holderLeft:null,
+   		intervalID:null,
+   		animateTargetOpacity:1,
+   		animationStepChange:0.05,
 
 		/*
 		*********************************************METHODS
@@ -43,6 +47,7 @@ var gui = gui || {};
 			this.secondImage.src = secondImagePath;
 			this.secondImage.style.width = '100%';
 			this.secondImage.style.height = 'auto';
+			this.secondImage.style.opacity = 1;
 			this.secondImage.style.position = 'absolute';
 			this.secondImage.style.top = 0;
 			this.secondImage.style.left = 0;
@@ -60,7 +65,7 @@ var gui = gui || {};
 			this.sliderBg = document.createElement('div');
 			this.sliderBg.style.backgroundColor = '#cdcdcd';
 			this.sliderBg.style.width = '100%';
-			this.sliderBg.style.height = '5px';
+			this.sliderBg.style.height = '2px';
 			sliderHolder.appendChild(this.sliderBg);
 
 			this.grabberHolder = document.createElement('div');
@@ -74,28 +79,62 @@ var gui = gui || {};
 
 			this.sliderGrabber = document.createElement('div');
 			this.sliderGrabber.style.position = 'absolute';
-			this.sliderGrabber.style.top = '39px';
+			this.sliderGrabber.style.top = '37px';
 			this.sliderGrabber.style.left = '50%';
 			this.sliderGrabber.style.marginLeft = '-9px';
 			this.sliderGrabber.style.backgroundColor = '#fff';
 			this.sliderGrabber.style.width = this.sliderGrabber.style.height = '15px'
 			this.sliderGrabber.style.border = '1px solid #999';
-			this.sliderGrabber.style.borderRadius = '5px';
+			this.sliderGrabber.style.borderRadius = '10px';
 			this.grabberHolder.appendChild(this.sliderGrabber);
 
 			if (touchSupport) {
 				this.grabberHolder.style.left = '-32px';
-				this.sliderGrabber.style.width = this.sliderGrabber.style.height = '30px';
+				this.sliderGrabber.style.width = this.sliderGrabber.style.height = '20px';
 				this.sliderGrabber.style.marginLeft = '-18px';
-				this.sliderGrabber.style.top = '30px';
+				this.sliderGrabber.style.top = '35px';
 				sliderHolder.style.marginTop = '5px';
+				this.sliderGrabber.style.borderRadius = '15px';
 				this.holder.style.paddingBottom = '5px';
 			}
+
+			var btnHolder = document.createElement('div');
+			btnHolder.style.margin = '10px 0px';
+			btnHolder.style.position = 'relative';
+			this.holder.appendChild(btnHolder);
+
+			var beforeBtn = document.createElement('span');
+			beforeBtn.style.fontSize = '12px';
+			beforeBtn.style.fontFamily = 'Helvetica, Arial, sans'
+			beforeBtn.style.color = '#999';
+			beforeBtn.style.backgroundColor = '#fff';
+			beforeBtn.style.padding = '4px 8px';
+			beforeBtn.style.border = '1px solid #999';
+			beforeBtn.style.borderRadius = '3px';
+			beforeBtn.style.cssFloat = 'left';
+			beforeBtn.style.cursor = 'pointer';
+			beforeBtn.innerHTML = '1912';
+			btnHolder.appendChild(beforeBtn);
+
+			var afterBtn = document.createElement('span');
+			afterBtn.style.fontSize = '12px';
+			afterBtn.style.fontFamily = 'Helvetica, Arial, sans'
+			afterBtn.style.color = '#999';
+			afterBtn.style.backgroundColor = '#fff';
+			afterBtn.style.padding = '4px 8px';
+			afterBtn.style.border = '1px solid #999';
+			afterBtn.style.borderRadius = '3px';
+			afterBtn.style.cssFloat = 'right';
+			afterBtn.style.cursor = 'pointer';
+			afterBtn.innerHTML = '2013';
+			btnHolder.appendChild(afterBtn);
+
 
 			var parentElem = document.getElementById('imageOpacitySlider').parentNode;
 			parentElem.appendChild(this.holder);
 
 			this.holderWidth = this.holder.clientWidth;
+			this.holderLeft = this.holder.getBoundingClientRect().left;
 
 			//set bounds vars
 			var grabberRect = this.grabberHolder.getBoundingClientRect();
@@ -108,6 +147,10 @@ var gui = gui || {};
 			if (touchSupport) {
 				imageOpacityVine.bind(this.grabberHolder, "touchstart", this.handleGrabberTouchstart, vineDataObj);
 				imageOpacityVine.bind(document, "touchend", this.handleGrabberTouchend, vineDataObj);
+				
+				//add slider support to the image as well as the grabber
+				imageOpacityVine.bind(this.secondImage, "touchstart", this.handleImageTouchstart, vineDataObj);
+				imageOpacityVine.bind(this.secondImage, "touchmove", this.handleImageTouchmove, vineDataObj);
 			}
 			else {
 				imageOpacityVine.bind(this.grabberHolder, "mousedown", this.handleGrabberMouseDown, vineDataObj);
@@ -116,10 +159,14 @@ var gui = gui || {};
 
 			imageOpacityVine.bind(window, "resize", this.handleWindowResize, vineDataObj);
 
+			imageOpacityVine.bind(beforeBtn, "click", this.handleBeforeBtnClick, vineDataObj);
+			imageOpacityVine.bind(afterBtn, "click", this.handleAfterBtnClick, vineDataObj);
+
 		},
 
 		handleGrabberMouseDown:function(e) {
 			e.preventDefault();
+			clearInterval(e.data.thisRef.intervalID);
 			if (!e.data.thisRef.beingDragged) {
 				//start the dragging process!
 				e.data.thisRef.beingDragged = true;
@@ -131,7 +178,6 @@ var gui = gui || {};
 		},
 
 		updateGrabberMove:function(e) {
-			var grabber = e.data.thisRef.grabberHolder;
 			var currentPageX = e.pageX;
 			var plusDiff = currentPageX - e.data.thisRef.dragPrevX;
 			
@@ -161,6 +207,7 @@ var gui = gui || {};
 
 		handleGrabberTouchstart:function(e) {
 			e.preventDefault();
+			clearInterval(e.data.thisRef.intervalID);
 			if (!e.data.thisRef.beingDragged && e.touches.length === 1) {
 				//start the dragging process!
 				e.data.thisRef.beingDragged = true;
@@ -209,6 +256,70 @@ var gui = gui || {};
 			//remove the mouse move listener
 			imageOpacityVine.unbind(document, "touchmove", e.data.thisRef.handleGrabberTouchmove);
 			e.data.thisRef.beingDragged = false;
+		},
+
+		handleImageTouchstart:function(e) {
+			e.preventDefault();
+			clearInterval(e.data.thisRef.intervalID);
+		},
+
+		handleImageTouchmove:function(e) {
+			
+			var imageXPos = e.touches[0].pageX - e.data.thisRef.holderLeft;
+			var imageWidth = e.data.thisRef.secondImage.clientWidth;
+			var opacitydec = imageXPos / imageWidth, targetOpacity = Math.abs(opacitydec - 1);
+			e.data.thisRef.secondImage.style.opacity = targetOpacity;
+
+			var grabberBoundsWidth = e.data.thisRef.dragRightBounds - e.data.thisRef.dragLeftBounds;
+			var targetGrabberX = e.data.thisRef.dragLeftBounds + (grabberBoundsWidth * opacitydec);
+			if (targetGrabberX > e.data.thisRef.dragRightBounds) {
+				targetGrabberX = e.data.thisRef.dragRightBounds;
+			}
+			else if (targetGrabberX < e.data.thisRef.dragLeftBounds) {
+				targetGrabberX = e.data.thisRef.dragLeftBounds;
+			}
+
+			e.data.thisRef.grabberHolder.style.left = targetGrabberX + 'px';
+		},
+
+		handleBeforeBtnClick:function(e) {
+			e.data.thisRef.animateTargetOpacity = 1;
+			clearInterval(e.data.thisRef.intervalID);
+			e.data.thisRef.intervalID = window.setInterval(e.data.thisRef.handleAnimateUpdate, 100, e.data.thisRef);
+		},
+
+		handleAfterBtnClick:function(e) {
+			e.data.thisRef.animateTargetOpacity = 0;
+			clearInterval(e.data.thisRef.intervalID);
+			e.data.thisRef.intervalID = window.setInterval(e.data.thisRef.handleAnimateUpdate, 100, e.data.thisRef);
+		},
+		
+		handleAnimateUpdate:function(thisRef) {
+			var currentOpacity = +thisRef.secondImage.style.opacity;
+			if (thisRef.animateTargetOpacity) {
+				//add to the opacity
+				thisRef.secondImage.style.opacity = (+thisRef.secondImage.style.opacity < 1) ? +thisRef.secondImage.style.opacity + thisRef.animationStepChange : thisRef.handleStopInterval(thisRef, 1);
+			}
+			else {
+				//minus from the opacity
+				thisRef.secondImage.style.opacity = (+thisRef.secondImage.style.opacity > thisRef.animationStepChange) ? +thisRef.secondImage.style.opacity - thisRef.animationStepChange : thisRef.handleStopInterval(thisRef, 0);
+			}
+
+			var grabberBoundsWidth = thisRef.dragRightBounds - thisRef.dragLeftBounds, opacityDec = Math.abs(+thisRef.secondImage.style.opacity - 1);;
+			var targetGrabberX = thisRef.dragLeftBounds + (grabberBoundsWidth * opacityDec);
+			if (targetGrabberX > thisRef.dragRightBounds) {
+				targetGrabberX = thisRef.dragRightBounds;
+			}
+			else if (targetGrabberX < thisRef.dragLeftBounds) {
+				targetGrabberX = thisRef.dragLeftBounds;
+			}
+
+			thisRef.grabberHolder.style.left = targetGrabberX + 'px';
+		},
+
+		handleStopInterval:function(thisRef, returnNum) {
+			clearInterval(thisRef.intervalID);
+			return returnNum;
 		},
 
 		handleWindowResize:function(e) {
